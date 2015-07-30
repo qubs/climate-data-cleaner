@@ -19,7 +19,7 @@ Determines which method is used to determine outliers in the data. A higher numb
 
 #### Method 1
 
-In this method, the entire dataset is analysed at once. Percentiles are calculated for the entire file, and outliers are outside the range of `[25% percentile - IQR × aggression, 75% percentile + IQR × aggression]. This method is fastest, but can result in unnecessary data removal, especially in wide-ranging seasonal values like temperature.
+In this method, the entire dataset is analysed at once. Percentiles are calculated for the entire file, and outliers are outside the range of `[25% percentile - IQR × aggression, 75% percentile + IQR × aggression]`. This method is fastest, but can result in unnecessary data removal, especially in wide-ranging seasonal values like temperature.
 
 #### Method 2
 
@@ -27,20 +27,25 @@ Method 2 divides up the data into chunks, specified by the `chunkSize` parameter
 
 #### Method 3
 
-Lorem ipsum dolor sit amet, consectetur adipisicing elit. Sit libero vero, doloremque, labore odit a architecto aperiam suscipit! Ad facere nesciunt aliquid distinctio ipsum ex accusantium earum soluta quasi eveniet!
-
+Method 3 performs multiple chunk-based analyses on the data, rotating the array the full length of a chunk, to reduce false removals. It is significantly slower than methods 1 or 2, but results in less accidental false data/false removals.
 
 ### aggression
 
-Lorem ipsum dolor sit amet, consectetur adipisicing elit. Similique consectetur explicabo est accusamus nam ipsam assumenda eligendi maiores quasi, incidunt hic alias repellat dolore dicta mollitia itaque a ea esse.
+**Values:** `(0, ∞)` (Suggested: `1.5`)
+
+The aggression parameter is used in statistical analysis in the following formula, used in methods 1 and 2: `[25% percentile - IQR × aggression, 75% percentile + IQR × aggression]`
+
+A higher aggression number actually results in more *lenient* bounds, whereas a value approaching 0 results in more aggressive pruning of data and a smaller acceptable range.
 
 ### chunkSize
 
-Lorem ipsum dolor sit amet, consectetur adipisicing elit. Pariatur libero, labore vel unde quos cumque, aperiam distinctio quod, repellendus hic obcaecati error modi facere dolor repellat similique. Amet, molestias, cum.
+**Values:** `[dataLength, 5]`
+
+The size of each chunk, and if method 3 is used the number of offset frames generated as well. What this value is set to depends on the type of data used, and if the data is temporal and seasonal, the range of time the data covers as well as the time interval between points.
 
 ### fields
 
-Lorem ipsum dolor sit amet, consectetur adipisicing elit. Repellendus consequuntur quisquam quae fugiat atque animi eum blanditiis facere iusto itaque ex debitis quo, quibusdam, pariatur nobis harum ut, rem dolorem.
+This contains a list of any field that would be in your dataset and the parameters for each individual dataset.
 
 #### forbidden
 
