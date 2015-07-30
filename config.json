@@ -1,7 +1,10 @@
 {
 	"method": 3,
 	"aggression": 1.5,
-	"chunkSize": 750,
+	"chunkSize": 850,
+
+	"skipRows": 2,
+	"headerRow": 2,
 
 	"fields": {
 		"Date/Time": {
@@ -72,43 +75,43 @@
 
 		"Water T1": {
 			"forbidden": false,
-			"bounds": [-70, 70],
+			"bounds": [-40, 50],
 			"outlierSearch": true
 		},
 		"WTemp1": {
 			"forbidden": false,
-			"bounds": [-70, 70],
+			"bounds": [-40, 50],
 			"outlierSearch": true
 		},
 		"Water T2": {
 			"forbidden": false,
-			"bounds": [-70, 70],
+			"bounds": [-40, 50],
 			"outlierSearch": true
 		},
 		"WTemp2": {
 			"forbidden": false,
-			"bounds": [-70, 70],
+			"bounds": [-40, 50],
 			"outlierSearch": true
 		},
 
 		"Soil T1": {
 			"forbidden": false,
-			"bounds": [-70, 90],
+			"bounds": [-40, 75],
 			"outlierSearch": true
 		},
 		"Soil T2": {
 			"forbidden": false,
-			"bounds": [-70, 90],
+			"bounds": [-40, 75],
 			"outlierSearch": true
 		},
 		"15cm Soil Tg": {
 			"forbidden": false,
-			"bounds": [-70, 90],
+			"bounds": [-40, 75],
 			"outlierSearch": true
 		},
 		"5cm Soil Tg": {
 			"forbidden": false,
-			"bounds": [-70, 90],
+			"bounds": [-40, 75],
 			"outlierSearch": true
 		},
 
@@ -155,7 +158,9 @@
 		},
 
 		"Rad": {
-			"forbidden": true
+			"forbidden": false,
+			"bounds": [-100000000, 100000000],
+			"outlierSearch": false
 		}
 	}
 }

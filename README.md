@@ -1,4 +1,4 @@
-# Data Clean
+# Data Cleaner
 **© Queen's University Biological Station 2015.**
 
 A utility developed to clean up data produced by climate stations.
@@ -33,13 +33,15 @@ Method 3 performs multiple chunk-based analyses on the data, rotating the array 
 
 **Values:** `(0, ∞)` (Suggested: `1.5`)
 
-The aggression parameter is used in statistical analysis in the following formula, used in methods 1 and 2: `[25% percentile - IQR × aggression, 75% percentile + IQR × aggression]`
+The aggression parameter is used in statistical analysis in the following formula, used in methods 1 and 2: 
+
+    [25% percentile - IQR × aggression, 75% percentile + IQR × aggression]
 
 A higher aggression number actually results in more *lenient* bounds, whereas a value approaching 0 results in more aggressive pruning of data and a smaller acceptable range.
 
 ### chunkSize
 
-**Values:** `[dataLength, 5]`
+**Values:** `[5, *length of data*]`
 
 The size of each chunk, and if method 3 is used the number of offset frames generated as well. What this value is set to depends on the type of data used, and if the data is temporal and seasonal, the range of time the data covers as well as the time interval between points.
 

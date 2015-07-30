@@ -10,14 +10,36 @@ import csv, sys, math, numpy, json
 # | Syntax: ./dataclean.py path/to/infile path/to/outfile 			|
 # ===================================================================
 
+aggression = 1.5 # range: (0, ∞) lower value means more aggressive removal
+method = 3 # method for determining outliers
+chunkSize = 750
+minChunkSize = 5
+skipRows = 2
+headerRow = 2
+
+skippedRows = []
+
+fieldSettings = {}
+
+filename = sys.argv[1]
+outfile = sys.argv[2]
+config = "./config.json"
+
 def processData(fields, rawData):
 	outFields = []
 
 	for f in range(0, len(fields)):
-		if fields[f] not in forbiddenFields:
+		if not fieldSettings[fields[f]]["forbidden"]:
 			fieldData = []
+
+			# Move all raw data from the current particular field (i.e. column) into the field data list.
+
 			for row in rawData:
 				fieldData.append(row[f])
+
+			# Clean up the data. Set it to a numpy NaN if it's blank. Otherwise, append as-is.
+			# The clean data is used for calculating statistical information, since numpy's
+			# quartile values treat NaN, ironically, like a number.
 
 			fieldDataClean = []
 
@@ -27,25 +49,30 @@ def processData(fields, rawData):
 				else:
 					fieldDataClean.append(fieldData[d])
 
-			firstQuartile = numpy.percentile(numpy.array(fieldDataClean, numpy.float), 25).item()
-			thirdQuartile = numpy.percentile(numpy.array(fieldDataClean, numpy.float), 75).item()
+			# Calculate the quartile values and use them to calculate the boundaries of outliers in the column.
+
+			nPFloatFieldDataClean = numpy.array(fieldDataClean, numpy.float)
+
+			firstQuartile = numpy.percentile(nPFloatFieldDataClean, 25).item()
+			thirdQuartile = numpy.percentile(nPFloatFieldDataClean, 75).item()
 			iqr = thirdQuartile - firstQuartile
 
-			lowerBound = firstQuartile - float(iqr) * aggression
-			upperBound = thirdQuartile + float(iqr) * aggression
+			fIQRA = float(iqr) * aggression
 
-			removed = 0
+			lowerBound = firstQuartile - fIQRA
+			upperBound = thirdQuartile + fIQRA
 
 			for d in range(0, len(fieldData)):
 				if fieldData[d] != numpy.nan:
 					if float(fieldData[d]) < lowerBound or float(fieldData[d]) > upperBound:
 						fieldData[d] = ""
-						removed += 1
 
 			#print fields[f] + "\t\t25%: " + str(firstQuartile) + "\t75%: " + str(thirdQuartile) + "\tIQR: " + str(iqr) + "\tLower: " + str(round(lowerBound, 3)) + "\tUpper: " + str(round(upperBound, 3)) + "\tRemoved " + str(removed)
 
 			outFields.append(fieldData)
 		else:
+			# If the field is forbidden, just push all the data into the output as-is.
+
 			fieldData = []
 			for row in rawData:
 				fieldData.append(row[f])
@@ -53,36 +80,6 @@ def processData(fields, rawData):
 			outFields.append(fieldData)
 
 	return outFields
-
-
-forbiddenFields = ["Date/Time", "Battery"] # what fields get ignored?
-aggression = 1.5 # range: (0, ∞) lower value means more aggressive removal
-method = 2 # method for determining outliers
-chunkSize = 750
-
-fieldData = {}
-limits = {
-	"Water T1": [-70, 70],
-	"Water T2": [-70, 70],
-	"WTemp1": [-70, 70],
-	"WTemp2": [-70, 70],
-
-	"Temp": [-80, 80],
-	"Air Temp": [-80, 80],
-
-	"Soil T1": [-70, 100],
-	"Soil T2": [-70, 100],
-	"15cm Soil Tg": [-70, 100],
-	"5cm Soil Tg": [-70, 100]
-}
-enableOutliersSearch = {
-	"WSpd": False,
-	"Gust": False,
-}
-
-filename = sys.argv[1]
-outfile = sys.argv[2]
-config = "./config.json"
 
 if len(sys.argv) < 3:
 	print "Syntax: ./dataclean.py path/to/infile path/to/outfile"
@@ -94,13 +91,25 @@ with open(config, "rU") as configfile:
 	method = configData["method"]
 	aggression = configData["aggression"]
 	chunkSize = configData["chunkSize"]
-	fieldData = configData["fields"]
+	fieldSettings = configData["fields"]
 
 	#	There should be about 25 chunks to a year's worth of seasonal data.
 	#	For non-seasonal data, this number shouldn't matter too much.
 
+	if chunkSize < minChunkSize:
+		print "Error: Chunk size minimum is " + str(minChunkSize) + ", set to " + str(chunkSize) + "."
+		exit()
+
 	with open(filename, "rU") as csvData:
 		dataReader = csv.reader(csvData, dialect="excel")
+
+		# The raw data format is as follows:
+		# [
+		#	[field1val1, field2val1, field3val1],
+		#	[field1val2, field2val2, field3val2],
+		#	[field1val3, field2val3, field3val3],
+		#	...
+		# ]
 
 		rawData = []
 		for row in dataReader:
@@ -108,36 +117,42 @@ with open(config, "rU") as configfile:
 
 		stationName = rawData[0][1]
 
-		fields = rawData[1]
+		fields = rawData[headerRow - 1]
+		numFields = len(fields)
 		outFields = []
 
 		firstRow = rawData[0]
 
-		rawData.remove(rawData[0]) # remove station name
-		rawData.remove(rawData[0]) # remove headers
+		for r in range(0, skipRows):
+			# Remove rows that do not contain data.
+			skippedRows.append(rawData[0])
+			rawData.remove(rawData[0])
+
+		if len(rawData) < chunkSize:
+			print "Error: Chunk size is larger than dataset."
+			exit()
 
 		rawDataOffsets = []
 		outFieldsOffsets = []
 
 		for r in range(0, len(rawData)):
 			for f in range(0, len(rawData[r])):
-				if rawData[r][f] != "" and not fieldData[fields[f]]["forbidden"]:
-					if float(rawData[r][f]) < fieldData[fields[f]]["bounds"][0] or float(rawData[r][f]) > fieldData[fields[f]]["bounds"][1]:
+				if rawData[r][f] != "" and not fieldSettings[fields[f]]["forbidden"]:
+					if float(rawData[r][f]) < fieldSettings[fields[f]]["bounds"][0] or float(rawData[r][f]) > fieldSettings[fields[f]]["bounds"][1]:
 						rawData[r][f] = ""
 
-		if method == 3:
-			print "Generating frames..."
-
-			for r in range(0, chunkSize):
-				sys.stdout.write("\r" + str(int(round(float(r + 1) / float(chunkSize) * 100))) + "%");
-				sys.stdout.flush();
-				rawDataOffsets.append(rawData[r:] + rawData[:r])
-
-			print ""
-
 		if method == 1:
+			# Method 1
+			# Perform a statistical analysis on the entire dataset at once, without dividing it up.
+			# Can result in unnecessary data removal.
+
 			outFields = processData(fields, rawData)
 		elif method == 2:
+			# Method 2
+			# Chunk up the dataset into sizes specified by chunkSize, then analyse each one
+			# individually and eliminate outliers in the chunk based on those results.
+			# Takes more time, but is more accurate than method 1.
+
 			chunks = []
 			numChunks = int(math.ceil(float(len(rawData)) / float(chunkSize)))
 
@@ -155,13 +170,35 @@ with open(config, "rU") as configfile:
 
 			print ""
 		elif method == 3:
+			# Method 3
+			# Perform method 2 on multiple offsets/rotations of the data to reduce false positives
+			# and negatives. Takes a long time.
+
+			# When the multiframe method is used, an array of multiple raw datasets is created,
+			# each offset by 1 more than the last, resulting in an array of a full 1-chunk
+			# rotation period of data. The benefits of this are that false positives or
+			# negatives can be found based on entire chunks which may be outliers.
+
+			for r in range(0, chunkSize):
+				sys.stdout.write("\rGenerated frame " + str(r + 1) + " of " + str(chunkSize) + " ");
+				sys.stdout.flush();
+
+				rawDataOffsets.append(rawData[r:] + rawData[:r])
+
+			print ""
+
+			numChunks = int(math.ceil(float(len(rawDataOffsets[0])) / float(chunkSize)))
+			numOffsets = len(rawDataOffsets)
+
+			print str(numChunks) + " chunks created"
+
 			for rd in range(0, len(rawDataOffsets)):
+				sys.stdout.write("\rOffset " + str(rd + 1) + " of " + str(numOffsets) + " ");
+				sys.stdout.flush();
+
 				chunks = []
-				numChunks = int(math.ceil(float(len(rawDataOffsets[rd])) / float(chunkSize)))
 
 				for c in range(0, numChunks):
-					sys.stdout.write("\rOffset " + str(rd + 1) + " of " + str(len(rawDataOffsets)) + " | Processed chunk " + str(c + 1) + " of " + str(numChunks) + " ");
-					sys.stdout.flush();
 					chunks.append(processData(fields, rawDataOffsets[rd][c * chunkSize:(c + 1) * chunkSize]))
 
 				outFieldsOffset = chunks[0]
@@ -173,19 +210,29 @@ with open(config, "rU") as configfile:
 
 				outFieldsOffsets.append(outFieldsOffset)
 
-			# rotate items back into place
+			# Rotate items back into place.
+
+			print ""
 
 			for o in range(0, len(outFieldsOffsets)):
+				sys.stdout.write("\rRotated chunk " + str(o + 1) + " of " + str(numOffsets) + " ");
+				sys.stdout.flush()
+
 				for i in range(0, len(outFieldsOffsets[o])):
 					outFieldsOffsets[o][i] = outFieldsOffsets[o][i][-o:] + outFieldsOffsets[o][i][:-o]
+				
+			print ""
 
+			minimumPresent = int(round(float(numOffsets) / 2.0)) + 100
 
-			for z in range(0, len(fields)):
-				outFields.append(["None"] * len(outFieldsOffsets[0][0]))
+			for f in range(0, numFields):
+				sys.stdout.write("\rTesting field " + str(f + 1) + " of " + str(numFields) + " ");
+				sys.stdout.flush()
 
-			for f in range(0, len(fields)):
-				numOffsets = len(outFieldsOffsets)
-				minimumPresent = int(round(float(len(outFieldsOffsets)) / 2.0))
+				# Generate a properly proportioned array for fitting the results into after they have been
+				# analysed to determine whether the value should be kept.
+
+				outFields.append([None] * len(outFieldsOffsets[0][0]))
 
 				for v in range(0, len(outFieldsOffsets[0][0])):
 
@@ -193,7 +240,7 @@ with open(config, "rU") as configfile:
 					presentOffset = -1
 
 					for o in range(0, numOffsets):
-						if outFieldsOffsets[o][f][v] != "" and outFieldsOffsets[o][f][v] != " ":
+						if outFieldsOffsets[o][f][v] != "" and str(outFieldsOffsets[o][f][v]) != "nan" and outFieldsOffsets[o][f][v] != numpy.nan:
 							numPresent += 1
 							presentOffset = o
 
@@ -206,10 +253,13 @@ with open(config, "rU") as configfile:
 
 		with open(outfile, 'wb') as outfile:
 			dataWriter = csv.writer(outfile, dialect="excel")
-			dataWriter.writerow(firstRow)
-			dataWriter.writerow(fields)
 
-			for i in range(0, len(outFields[0])):
+			for sr in skippedRows:
+				dataWriter.writerow(sr)
+
+			numRows = len(outFields[0])
+
+			for i in range(0, numRows):
 				row = []
 				for of in outFields:
 					value = of[i]
@@ -219,3 +269,9 @@ with open(config, "rU") as configfile:
 					row.append(value)
 
 				dataWriter.writerow(row)
+
+				sys.stdout.write("\rWrote row " + str(i + 1) + " of " + str(numRows) + " ");
+				sys.stdout.flush()
+
+			print ""
+			sys.stdout.flush()
