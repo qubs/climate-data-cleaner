@@ -1,5 +1,5 @@
 # Data Clean
-## &copy; Queen's University Biological Station 2015.
+**© Queen's University Biological Station 2015.**
 
 A utility developed to clean up data produced by climate stations.
 
@@ -11,7 +11,7 @@ A utility developed to clean up data produced by climate stations.
 
 All configuration is stored in the `config.json` file stored in the same directory as the script. The following fields are available for configuration:
 
-### `"method"`
+### method
 
 Values: `1` through `3`
 
@@ -19,12 +19,25 @@ Determines which method is used to determine outliers in the data. A higher numb
 
 #### Method 1
 
-Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quas beatae nemo provident, facilis optio non, numquam harum ad odit enim, eligendi perspiciatis, neque aliquid esse ipsum sed omnis! Sapiente, iure!
+In this method, the entire dataset is analysed at once. Percentiles are calculated for the entire file, and outliers are outside the range of `[25% percentile - IQR × aggression, 75% percentile + IQR × aggression]. This method is fastest, but can result in unnecessary data removal, especially in wide-ranging seasonal values like temperature.
 
 #### Method 2
 
-Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dignissimos sunt voluptas praesentium ipsa aut sit pariatur nobis, facere corporis eius rerum recusandae, ex magni corrupti quos et maiores obcaecati accusamus?
+Method 2 divides up the data into chunks, specified by the `chunkSize` parameter. Each chunk is treated like the entire dataset was in the first method. This is particularely useful for seasonal data, where each chunk can be analysed for errors independently. For example, method 1 may include a temperature of 0°C as acceptable in a summer section of temperature data, even if it is an equipment error, because 0°C is an reasonable value at other times in the year. However, when the data is chunked, this data would be caught as an outlier and removed. See the `chunkSize` configuration information for advice on setting this configuration parameter.
 
 #### Method 3
 
 Lorem ipsum dolor sit amet, consectetur adipisicing elit. Sit libero vero, doloremque, labore odit a architecto aperiam suscipit! Ad facere nesciunt aliquid distinctio ipsum ex accusantium earum soluta quasi eveniet!
+
+
+### aggression
+
+Lorem ipsum dolor sit amet, consectetur adipisicing elit. Similique consectetur explicabo est accusamus nam ipsam assumenda eligendi maiores quasi, incidunt hic alias repellat dolore dicta mollitia itaque a ea esse.
+
+### chunkSize
+
+Lorem ipsum dolor sit amet, consectetur adipisicing elit. Pariatur libero, labore vel unde quos cumque, aperiam distinctio quod, repellendus hic obcaecati error modi facere dolor repellat similique. Amet, molestias, cum.
+
+### fields
+
+Lorem ipsum dolor sit amet, consectetur adipisicing elit. Repellendus consequuntur quisquam quae fugiat atque animi eum blanditiis facere iusto itaque ex debitis quo, quibusdam, pariatur nobis harum ut, rem dolorem.
