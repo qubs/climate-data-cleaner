@@ -1,0 +1,161 @@
+{
+	"method": 2,
+	"aggression": 1.5,
+	"chunkSize": 750,
+
+	"fields": {
+		"Date/Time": {
+			"forbidden": true
+		},
+
+		"Battery": {
+			"forbidden": true
+		},
+
+		"Baro": {
+			"forbidden": false,
+			"bounds": [900, 1300],
+			"outlierSearch": true
+		},
+
+		"Rain AC": {
+			"forbidden": false,
+			"bounds": [0, 10000],
+			"outlierSearch": true
+		},
+		"Total Precip": {
+			"forbidden": false,
+			"bounds": [0, 1000],
+			"outlierSearch": true
+		},
+		"Total Precip Int": {
+			"forbidden": false,
+			"bounds": [0, 100],
+			"outlierSearch": false
+		},
+
+		"Temp": {
+			"forbidden": false,
+			"bounds": [-70, 70],
+			"outlierSearch": true
+		},
+		"Temp_1": {
+			"forbidden": false,
+			"bounds": [-70, 70],
+			"outlierSearch": true
+		},
+		"Temp4(A)": {
+			"forbidden": false,
+			"bounds": [-70, 70],
+			"outlierSearch": true
+		},
+		"Temp5(B)": {
+			"forbidden": false,
+			"bounds": [-70, 70],
+			"outlierSearch": true
+		},
+		"Temp6(C)": {
+			"forbidden": false,
+			"bounds": [-70, 70],
+			"outlierSearch": true
+		},
+		"Temp7": {
+			"forbidden": false,
+			"bounds": [-70, 70],
+			"outlierSearch": true
+		},
+		"Air Temp": {
+			"forbidden": false,
+			"bounds": [-70, 70],
+			"outlierSearch": true
+		},
+
+		"Water T1": {
+			"forbidden": false,
+			"bounds": [-70, 70],
+			"outlierSearch": true
+		},
+		"WTemp1": {
+			"forbidden": false,
+			"bounds": [-70, 70],
+			"outlierSearch": true
+		},
+		"Water T2": {
+			"forbidden": false,
+			"bounds": [-70, 70],
+			"outlierSearch": true
+		},
+		"WTemp2": {
+			"forbidden": false,
+			"bounds": [-70, 70],
+			"outlierSearch": true
+		},
+
+		"Soil T1": {
+			"forbidden": false,
+			"bounds": [-70, 90],
+			"outlierSearch": true
+		},
+		"Soil T2": {
+			"forbidden": false,
+			"bounds": [-70, 90],
+			"outlierSearch": true
+		},
+		"15cm Soil Tg": {
+			"forbidden": false,
+			"bounds": [-70, 90],
+			"outlierSearch": true
+		},
+		"5cm Soil Tg": {
+			"forbidden": false,
+			"bounds": [-70, 90],
+			"outlierSearch": true
+		},
+
+		"RH": {
+			"forbidden": false,
+			"bounds": [0, 100],
+			"outlierSearch": true
+		},
+		"R.H.": {
+			"forbidden": false,
+			"bounds": [0, 100],
+			"outlierSearch": true
+		},
+		"R. H.": {
+			"forbidden": false,
+			"bounds": [0, 100],
+			"outlierSearch": true
+		},
+
+		"W Dir": {
+			"forbidden": false,
+			"bounds": [0, 360],
+			"outlierSearch": false
+		},
+		"WDir": {
+			"forbidden": false,
+			"bounds": [0, 360],
+			"outlierSearch": false
+		},
+		"W Spd": {
+			"forbidden": false,
+			"bounds": [0, 90],
+			"outlierSearch": false
+		},
+		"WSpd": {
+			"forbidden": false,
+			"bounds": [0, 90],
+			"outlierSearch": false
+		},
+		"Gust": {
+			"forbidden": false,
+			"bounds": [0, 10],
+			"outlierSearch": false
+		},
+
+		"Rad": {
+			"forbidden": true
+		}
+	}
+}
