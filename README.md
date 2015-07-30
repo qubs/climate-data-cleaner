@@ -41,3 +41,21 @@ Lorem ipsum dolor sit amet, consectetur adipisicing elit. Pariatur libero, labor
 ### fields
 
 Lorem ipsum dolor sit amet, consectetur adipisicing elit. Repellendus consequuntur quisquam quae fugiat atque animi eum blanditiis facere iusto itaque ex debitis quo, quibusdam, pariatur nobis harum ut, rem dolorem.
+
+#### forbidden
+
+**Format:** `true` or `false`
+
+If this field does **not** need to be analysed for outliers or changed at all, use a value of `true`. Otherwise, use `false`.
+
+#### bounds
+
+**Format:** `[###, ###]` where the first number is the lower boundary and the second number is the upper boundary.
+
+This specifies the absolute minimum and maximum values that are acceptable. Values that are not within this range are removed without any sort of analysis or inclusion in quartile calculations. These should be set to well beyond reasonable values that may be included in the data that can be removed without analysis. For example, lake water temperatures of 100°C or above are entirely unreasonable and do not need to be tested against percentiles to be removed.
+
+#### outlierSearch
+
+**Format:** `true` or `false`
+
+If this field does not or should not be analysed using a percentile- and iqr-based search, set to `false`. Otherwise, set to `true`. It may be useful to disable this option if the measurement is one prone to sudden and extreme changes that may last for shots amount of time; for example wind speeds or directions.
