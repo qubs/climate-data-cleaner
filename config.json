@@ -1,6 +1,7 @@
 {
 	"method": 3,
 	"aggression": 1.5,
+	"threshold": 0.4,
 	"chunkSize": 850,
 
 	"skipRows": 2,
@@ -141,6 +142,11 @@
 			"bounds": [0, 360],
 			"outlierSearch": false
 		},
+		"Mean Wind Direction": {
+			"forbidden": false,
+			"bounds": [0, 360],
+			"outlierSearch": false
+		},
 		"W Spd": {
 			"forbidden": false,
 			"bounds": [0, 90],
@@ -151,12 +157,32 @@
 			"bounds": [0, 90],
 			"outlierSearch": false
 		},
+		"Mean Wind Speed": {
+			"forbidden": false,
+			"bounds": [0, 90],
+			"outlierSearch": false
+		},
 		"Gust": {
 			"forbidden": false,
-			"bounds": [0, 10],
+			"bounds": [0, 90],
+			"outlierSearch": false
+		},
+		"Max Wind Speed": {
+			"forbidden": false,
+			"bounds": [0, 90],
+			"outlierSearch": false
+		},
+		"Min Wind Speed": {
+			"forbidden": false,
+			"bounds": [0, 90],
 			"outlierSearch": false
 		},
 
+		"Solar Radiation": {
+			"forbidden": false,
+			"bounds": [-100000000, 100000000],
+			"outlierSearch": false
+		},
 		"Rad": {
 			"forbidden": false,
 			"bounds": [-100000000, 100000000],

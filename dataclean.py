@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import csv, sys, math, numpy, json
+import csv, sys, math, numpy, json, threading
 
 # ===================================================================
 # | Data Cleaner Utility											|
@@ -10,10 +10,14 @@ import csv, sys, math, numpy, json
 # | Syntax: ./dataclean.py path/to/infile path/to/outfile 			|
 # ===================================================================
 
+# Default values:
+
 aggression = 1.5 # range: (0, ∞) lower value means more aggressive removal
+threshold = 0.4 # 40%
 method = 3 # method for determining outliers
-chunkSize = 750
+chunkSize = 850
 minChunkSize = 5
+dataLength = -1
 skipRows = 2
 headerRow = 2
 
@@ -51,21 +55,25 @@ def processData(fields, rawData):
 
 			# Calculate the quartile values and use them to calculate the boundaries of outliers in the column.
 
-			nPFloatFieldDataClean = numpy.array(fieldDataClean, numpy.float)
+			if len(fieldDataClean) > 0:
+				nPFloatFieldDataClean = numpy.array(fieldDataClean, numpy.float)
 
-			firstQuartile = numpy.percentile(nPFloatFieldDataClean, 25).item()
-			thirdQuartile = numpy.percentile(nPFloatFieldDataClean, 75).item()
-			iqr = thirdQuartile - firstQuartile
+				firstQuartile = numpy.percentile(nPFloatFieldDataClean, 25).item()
+				thirdQuartile = numpy.percentile(nPFloatFieldDataClean, 75).item()
+				iqr = thirdQuartile - firstQuartile
 
-			fIQRA = float(iqr) * aggression
+				fIQRA = float(iqr) * aggression
 
-			lowerBound = firstQuartile - fIQRA
-			upperBound = thirdQuartile + fIQRA
+				lowerBound = firstQuartile - fIQRA
+				upperBound = thirdQuartile + fIQRA
 
-			for d in range(0, len(fieldData)):
-				if fieldData[d] != numpy.nan:
-					if float(fieldData[d]) < lowerBound or float(fieldData[d]) > upperBound:
-						fieldData[d] = ""
+				for d in range(0, len(fieldData)):
+					if fieldData[d] != numpy.nan:
+						if float(fieldData[d]) < lowerBound or float(fieldData[d]) > upperBound:
+							fieldData[d] = ""
+			else:
+				for d in range(0, len(fieldData)):
+					fieldData[d] = ""
 
 			#print fields[f] + "\t\t25%: " + str(firstQuartile) + "\t75%: " + str(thirdQuartile) + "\tIQR: " + str(iqr) + "\tLower: " + str(round(lowerBound, 3)) + "\tUpper: " + str(round(upperBound, 3)) + "\tRemoved " + str(removed)
 
@@ -90,6 +98,7 @@ with open(config, "rU") as configfile:
 	
 	method = configData["method"]
 	aggression = configData["aggression"]
+	threshold = configData["threshold"]
 	chunkSize = configData["chunkSize"]
 	fieldSettings = configData["fields"]
 
@@ -119,7 +128,21 @@ with open(config, "rU") as configfile:
 
 		fields = rawData[headerRow - 1]
 		numFields = len(fields)
+
+		# Out field structure:
+		# [
+		#	[field1val1, field1val2, field1val3, ...],
+		#	[field2val1, field2val2, field2val3, ...],
+		#	[field3val1, field3val2, field3val3, ...],
+		#	...
+		# ]
+
 		outFields = []
+
+		for f in fields:
+			if f not in fieldSettings:
+				print "Error: undefined field parameters for " + f + "."
+				exit()
 
 		firstRow = rawData[0]
 
@@ -128,14 +151,16 @@ with open(config, "rU") as configfile:
 			skippedRows.append(rawData[0])
 			rawData.remove(rawData[0])
 
-		if len(rawData) < chunkSize:
+		dataLength = len(rawData)
+
+		if dataLength < chunkSize:
 			print "Error: Chunk size is larger than dataset."
 			exit()
 
 		rawDataOffsets = []
 		outFieldsOffsets = []
 
-		for r in range(0, len(rawData)):
+		for r in range(0, dataLength):
 			for f in range(0, len(rawData[r])):
 				if rawData[r][f] != "" and not fieldSettings[fields[f]]["forbidden"]:
 					if float(rawData[r][f]) < fieldSettings[fields[f]]["bounds"][0] or float(rawData[r][f]) > fieldSettings[fields[f]]["bounds"][1]:
@@ -198,15 +223,20 @@ with open(config, "rU") as configfile:
 
 				chunks = []
 
+				# for c in range(0, numChunks):
+				# 	chunks.append(processData(fields, rawDataOffsets[rd][c * chunkSize:(c + 1) * chunkSize]))
+
+				# outFieldsOffset = chunks[0]
+
 				for c in range(0, numChunks):
 					chunks.append(processData(fields, rawDataOffsets[rd][c * chunkSize:(c + 1) * chunkSize]))
 
-				outFieldsOffset = chunks[0]
-
-				for c in range(1, numChunks):
-					for i in range(0, len(chunks[c])):
-						for i2 in chunks[c][i]:
-							outFieldsOffset[i].append(i2)
+					if c == 0:
+						outFieldsOffset = chunks[0]
+					else:
+						for i in range(0, numFields):
+							for i2 in chunks[c][i]:
+								outFieldsOffset[i].append(i2)
 
 				outFieldsOffsets.append(outFieldsOffset)
 
@@ -223,7 +253,7 @@ with open(config, "rU") as configfile:
 				
 			print ""
 
-			minimumPresent = int(round(float(numOffsets) / 2.0)) + 100
+			minimumPresent = int(round(float(numOffsets) * threshold))
 
 			for f in range(0, numFields):
 				sys.stdout.write("\rTesting field " + str(f + 1) + " of " + str(numFields) + " ");
@@ -232,10 +262,9 @@ with open(config, "rU") as configfile:
 				# Generate a properly proportioned array for fitting the results into after they have been
 				# analysed to determine whether the value should be kept.
 
-				outFields.append([None] * len(outFieldsOffsets[0][0]))
+				outFields.append([None] * dataLength)
 
-				for v in range(0, len(outFieldsOffsets[0][0])):
-
+				for v in range(0, dataLength):
 					numPresent = 0
 					presentOffset = -1
 
@@ -257,9 +286,7 @@ with open(config, "rU") as configfile:
 			for sr in skippedRows:
 				dataWriter.writerow(sr)
 
-			numRows = len(outFields[0])
-
-			for i in range(0, numRows):
+			for i in range(0, dataLength):
 				row = []
 				for of in outFields:
 					value = of[i]
@@ -270,7 +297,7 @@ with open(config, "rU") as configfile:
 
 				dataWriter.writerow(row)
 
-				sys.stdout.write("\rWrote row " + str(i + 1) + " of " + str(numRows) + " ");
+				sys.stdout.write("\rWrote row " + str(i + 1) + " of " + str(dataLength) + " ");
 				sys.stdout.flush()
 
 			print ""
