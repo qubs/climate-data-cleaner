@@ -1,6 +1,7 @@
 {
 	"method": 3,
-	"aggression": 1.5,
+	"quartileDistance": 1.5,
+	"stdevDistance": 2,
 	"threshold": 0.4,
 	"chunkSize": 850,
 
