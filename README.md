@@ -5,7 +5,7 @@ A utility developed to clean up data produced by climate stations.
 
 ## Syntax
 
-    ./dataclean.py path/to/infile path/to/outfile
+    ./data-cleaner.py path/to/infile path/to/outfile
 
 ## Configuration
 
